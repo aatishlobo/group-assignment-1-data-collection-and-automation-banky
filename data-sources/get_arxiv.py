@@ -35,7 +35,7 @@ def arxiv_calls(topic, limit=10):
 
     return paper_dict
 
-def upload_to_gcs(data):
+def upload_to_gcs(data, topic):
     # Init client
     client = storage.Client.from_service_account_json(service_account_file_path, project=project_id)
 
@@ -44,10 +44,10 @@ def upload_to_gcs(data):
     
     # Fetch bucket and list blobs
     bucket = client.get_bucket(bucket_name)
-    blob = bucket.blob('arxiv_papers')
+    blob = bucket.blob(f'arxiv_papers_{topic.lower()}')
     blob.upload_from_string(json_data)
 
 papers_1 = arxiv_calls("NLP")
 papers_2 = arxiv_calls("GenAI")
-upload_to_gcs(papers_1)
-upload_to_gcs(papers_2)
+upload_to_gcs(papers_1, "NLP")
+upload_to_gcs(papers_2, "GenAI")
