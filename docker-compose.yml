@@ -1,0 +1,34 @@
+services:
+  webapp:
+    build: streamlit # build from Dockerfile in streamlit
+    ports:
+      - "80:8501"
+    env_file:
+      - ./.env
+    volumes:
+      - /Users/kayvan/.ssh/banky-aiml-data-36ef9bbcdb6d.json:/tmp/gcp-key.json
+    networks:
+      - app-network
+    depends_on:
+      - api-server
+  
+  api-server:
+    build: fastapi # build from a Dockerfile in fastapi
+    ports:
+      - "8000:8000"
+    networks:
+      - app-network
+    env_file:
+      - ./.env
+    volumes:
+      - /Users/kayvan/.ssh/banky-aiml-data-36ef9bbcdb6d.json:/tmp/gcp-key.json
+  
+  cron:
+    build: crontab
+    depends_on: # To control the order of service startup and shutdown.
+      - api-server # depends on it
+    networks:
+      - app-network # name of the network
+networks: # Networks let services communicate with each other
+  # By default, services can all communicate.
+  app-network: # In this case, we don't actually need extra network. 
