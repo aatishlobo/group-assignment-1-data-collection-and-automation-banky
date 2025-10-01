@@ -2,12 +2,16 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
 import datetime
-from user_define_project import *
 from google.oauth2 import service_account
 from google.cloud import storage
 import json
 import os
+import sys
 from bs4 import BeautifulSoup
+
+# Add current directory to path to import user_definition
+sys.path.append(os.path.dirname(__file__))
+from user_definition import *
 
 app = FastAPI()
 
@@ -60,15 +64,22 @@ def call_google_search(search_param: ArticleSearch):
     results = []
     key_path = os.getenv("GCP_SERVICE_ACCOUNT_KEY")
     gcp_project_id = os.getenv("PROJECT_ID")
-
-    credentials = service_account.Credentials.from_service_account_file(key_path)
-    client = storage.Client(project=gcp_project_id, credentials=credentials)
     
-    for start in range(1, 2, 10):
+    # Validate required environment variables
+    if not key_path or not gcp_project_id:
+        return {"error": "Missing required environment variables: GCP_SERVICE_ACCOUNT_KEY or PROJECT_ID"}
+    
+    try:
+        credentials = service_account.Credentials.from_service_account_file(key_path)
+        client = storage.Client(project=gcp_project_id, credentials=credentials)
+    except Exception as e:
+        return {"error": f"Failed to authenticate with GCP: {str(e)}"}
+    
+    for start in range(1, 11, 10):
         params = {
             "key": search_param.api_key,
             "cx": search_param.search_engine_id,
-            "q": f"{search_param.topic_name} site:medium.com",
+            "q": f"{search_param.topic_name}",  
             "dateRestrict": f"d{search_param.no_days}",
             "start": start
         }
@@ -77,19 +88,28 @@ def call_google_search(search_param: ArticleSearch):
             response = requests.get(search_param.url, params=params, timeout=30)
             response.raise_for_status()
             data = response.json()
+            
+            # Debug: Log the search response
+            print(f"Google Search API response status: {response.status_code}")
+            print(f"Search query: {params['q']}")
+            print(f"Total results found: {data.get('searchInformation', {}).get('totalResults', 'Unknown')}")
+            print(f"Items returned: {len(data.get('items', []))}")
 
             for item in data.get("items", []):
                 link = item["link"]
+                print(f"Scraping article: {link}")
                 article_data = scrape_article(link)
                 results.append(article_data)
 
         except Exception as e:
-            results.append({"error": str(e)})
+            error_msg = f"Search API error: {str(e)}"
+            print(error_msg)
+            results.append({"error": error_msg})
 
     try:
         bucket = client.bucket(os.getenv("GCP_BUCKET_NAME"))
 
-        file_name = f"medium_ai_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        file_name = f"medium_ai/medium_ai_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         blob = bucket.blob(file_name)
         blob.upload_from_string(json.dumps(results, indent=2), content_type="application/json")
 
