@@ -25,14 +25,6 @@ class ArticleSearch(BaseModel):
     source_dictionary: dict
 
 
-class GcsStringUpload(BaseModel):
-    service_account_key: str
-    project_id: str
-    bucket_name: str
-    file_name: str
-    data: str
-
-
 def scrape_article(url: str) -> dict:
     """Scrape an article page and return its text content."""
     try:
@@ -48,7 +40,7 @@ def scrape_article(url: str) -> dict:
         return {
             "url": url,
             "title": title,
-            "content": content[:2000]
+            "content": content
         }
     except requests.exceptions.RequestException as e:
         return {"url": url, "error": f"Request error: {str(e)}"}
@@ -62,16 +54,13 @@ def call_google_search(search_param: ArticleSearch):
     Google search → scrape each article → save results to GCS.
     """
     results = []
-    key_path = os.getenv("GCP_SERVICE_ACCOUNT_KEY")
-    gcp_project_id = os.getenv("PROJECT_ID")
     
-    # Validate required environment variables
-    if not key_path or not gcp_project_id:
+    if not service_account_file_path or not project_id:
         return {"error": "Missing required environment variables: GCP_SERVICE_ACCOUNT_KEY or PROJECT_ID"}
     
     try:
-        credentials = service_account.Credentials.from_service_account_file(key_path)
-        client = storage.Client(project=gcp_project_id, credentials=credentials)
+        credentials = service_account.Credentials.from_service_account_file(service_account_file_path)
+        client = storage.Client(project=project_id, credentials=credentials)
     except Exception as e:
         return {"error": f"Failed to authenticate with GCP: {str(e)}"}
     
@@ -107,7 +96,7 @@ def call_google_search(search_param: ArticleSearch):
             results.append({"error": error_msg})
 
     try:
-        bucket = client.bucket(os.getenv("GCP_BUCKET_NAME"))
+        bucket = client.bucket(bucket_name)
 
         file_name = f"medium_ai/medium_ai_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         blob = bucket.blob(file_name)
@@ -121,17 +110,3 @@ def call_google_search(search_param: ArticleSearch):
     except Exception as e:
         return {"message": f"GCS upload failed: {e}"}
 
-
-@app.put("/save_to_gcs")
-def save_to_gcs(gcs_upload_param: GcsStringUpload):
-    """Save any string (HTML/text) to GCS."""
-    credentials = service_account.Credentials.from_service_account_file(
-        gcs_upload_param.service_account_key
-    )
-    client = storage.Client(
-        project=gcs_upload_param.project_id, credentials=credentials
-    )
-    bucket = client.bucket(gcs_upload_param.bucket_name)
-    file = bucket.blob(gcs_upload_param.file_name)
-    file.upload_from_string(gcs_upload_param.data)
-    return {"message": f"{gcs_upload_param.file_name} saved to {gcs_upload_param.bucket_name}"}
