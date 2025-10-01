@@ -1,4 +1,12 @@
+# checkpoint 30/09/2025
+
+from fastapi import FastAPI
+from pydantic import BaseModel
 import requests
+import datetime
+from google.oauth2 import service_account
+from google.cloud import storage
+import json
 import os
 import sys
 from bs4 import BeautifulSoup
@@ -6,6 +14,17 @@ from bs4 import BeautifulSoup
 # Add current directory to path to import user_definition
 sys.path.append(os.path.dirname(__file__))
 from user_definition import *
+
+app = FastAPI()
+
+
+class ArticleSearch(BaseModel):
+    url: str
+    search_engine_id: str
+    api_key: str
+    no_days: int
+    topic_name: str
+    source_dictionary: dict
 
 
 def scrape_article(url: str) -> dict:
@@ -31,33 +50,33 @@ def scrape_article(url: str) -> dict:
         return {"url": url, "error": f"Unexpected error: {str(e)}"}
 
 
-def search_medium_articles(topic_name, no_days, api_key, search_engine_id, google_api_url):
+@app.post("/search/articles")
+def call_google_search(search_param: ArticleSearch):
     """
-    Search for Medium articles using Google Custom Search API.
-    
-    Args:
-        topic_name: Search topic
-        no_days: Number of days to search back
-        api_key: Google API key
-        search_engine_id: Google Custom Search Engine ID
-        google_api_url: Google Custom Search API URL
-    
-    Returns:
-        list: List of scraped articles
+    Google search → scrape each article → save results to GCS.
     """
     results = []
     
+    if not service_account_file_path or not project_id:
+        return {"error": "Missing required environment variables: GCP_SERVICE_ACCOUNT_KEY or PROJECT_ID"}
+    
+    try:
+        credentials = service_account.Credentials.from_service_account_file(service_account_file_path)
+        client = storage.Client(project=project_id, credentials=credentials)
+    except Exception as e:
+        return {"error": f"Failed to authenticate with GCP: {str(e)}"}
+    
     for start in range(1, 11, 10):
         params = {
-            "key": api_key,
-            "cx": search_engine_id,
-            "q": f"{topic_name}",  
-            "dateRestrict": f"d{no_days}",
+            "key": search_param.api_key,
+            "cx": search_param.search_engine_id,
+            "q": f"{search_param.topic_name}",  
+            "dateRestrict": f"d{search_param.no_days}",
             "start": start
         }
 
         try:
-            response = requests.get(google_api_url, params=params, timeout=30)
+            response = requests.get(search_param.url, params=params, timeout=30)
             response.raise_for_status()
             data = response.json()
             
@@ -77,6 +96,19 @@ def search_medium_articles(topic_name, no_days, api_key, search_engine_id, googl
             error_msg = f"Search API error: {str(e)}"
             print(error_msg)
             results.append({"error": error_msg})
-    
-    return results
+
+    try:
+        bucket = client.bucket(bucket_name)
+
+        file_name = f"medium_ai/medium_ai_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        blob = bucket.blob(file_name)
+        blob.upload_from_string(json.dumps(results, indent=2), content_type="application/json")
+
+        return {
+            "topic": search_param.topic_name,
+            "scraped_count": len(results),
+            "bucket_file": file_name
+        }
+    except Exception as e:
+        return {"message": f"GCS upload failed: {e}"}
 
