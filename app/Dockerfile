@@ -2,7 +2,7 @@ FROM continuumio/miniconda3
 
 WORKDIR /streamlit
 
-# Copy environment.yml
+# Copy everything
 COPY * .
 
 RUN conda env create -f environment.yml
