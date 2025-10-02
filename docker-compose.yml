@@ -13,7 +13,7 @@ services:
       - api-server
   
   api-server:
-    build: fastapi # build from a Dockerfile in fastapi
+    build: datasources # build from a Dockerfile in fastapi
     ports:
       - "8000:8000"
     networks:
