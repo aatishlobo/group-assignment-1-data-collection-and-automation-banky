@@ -46,15 +46,6 @@ def retrieve_data_from_gcs(
             data = json.loads(file_contents)
             section_output = section_output | data
             
-            # if i == 0:
-            #     print(json.dumps(data, indent=4))
-            #     curOut = return_gemini_arxiv_summary(data)
-            #     section_output += curOut
-            #     print(curOut)
-            #     print(section_output)
-            # section_output[data[]]
-            # section_output += return_gemini_arxiv_summary(data)
-        # elif folder_prefix == "medium_ai":
 
         i += 1
     
