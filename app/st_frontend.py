@@ -34,7 +34,6 @@ def retrieve_data_from_gcs(
 
     section_output = {}
 
-    i = 0
     for blob in blobs:
         print(blob.name)
 
@@ -45,9 +44,10 @@ def retrieve_data_from_gcs(
             file_contents = blob.download_as_text()
             data = json.loads(file_contents)
             section_output = section_output | data
-            
+        
+        # elif folder_prefix == ""
 
-        i += 1
+
     
     # print(section_output)
     return section_output
