@@ -124,82 +124,60 @@ Each container can be built, tested locally, and pushed to Docker Hub for deploy
 
 ---
 
-#### 6.1 Authenticate with Docker Hub
+## 6. Containerization and Deployment
 
-Before building images, log in to Docker Hub:
+This project includes three containerized components:
+
+1. **Cron container** – runs automated scraping tasks (located in `crontab/`)
+2. **Streamlit frontend** – dashboard visualization interface (located in `app/`)
+3. **FastAPI backend** – handles data extraction and upload to GCS (located in `datasources/`)
+
+Each container is defined inside a single `docker-compose.yml` file so the entire system can be built and launched together with one command.
+
+---
+
+### 6.1 Authenticate with Docker Hub
+
+Before running locally, log in to Docker Hub (optional if you’re just testing locally):
 
 ```bash
 docker login
-
 ```
-Enter your Docker Hub username and personal access token (or password).
+Enter your Docker Hub username and personal access token (or password) on the website.
 
-#### 6.2 Build Images Locally
+### 6.2 Run All Containers Locally (Recommended)
+To spin up all three containers simultaneously, navigate to the project root directory (where docker-compose.yml is located) and run:
 
-From the project root directory, run the following commands to build all three images.
-Each is explicitly set to build for the linux/amd64 platform (required for Google Cloud Run
-
-# Cron container (located in crontab/)
+Note before this line: If you want to run locally on a mac, do not include --platform. 
+```bash
+docker compose up --build --platform linux/amd64
 ```
-docker build --platform linux/amd64 -t username/banky-cron:latest -f crontab/Dockerfile .
+This command will:
+
+Build all three containers for the linux/amd64 platform. 
+
+Start them together on the same network.
+
+Streamlit frontend: http://localhost
+
+FastAPI backend: http://localhost:8000/docs
+
+Cron container: runs automatically in the background
+
+To stop everything:
+
+### 6.3 Rebuilding or Updating Containers
+If you make code changes and want a clean rebuild:
+
+```bash
+docker compose build --no-cache
 ```
-# Streamlit frontend (located in app/)
+If you only want to rebuild one specific service (for example, Streamlit):
+
+```bash
+docker compose build streamlit
+docker compose up streamlit
 ```
-docker build --no-cache --platform linux/amd64 -t username/banky-streamlit:latest -f app/Dockerfile .
-```
-# FastAPI backend (located in datasources/)
-```
-docker build --platform linux/amd64 -t username/banky-fastapi:latest -f datasources/Dockerfile .
-```
-These commands create three reproducible Docker images on your local system.
-
-#### 6.3 Test Containers Locally (Optional)
-
-You can test each container before pushing:
-
-# Streamlit frontend
-```
-docker run -p 8501:8501 bornakarimi/banky-streamlit:latest
-```
-# FastAPI backend
-```
-docker run -p 8000:8000 bornakarimi/banky-fastapi:latest
-```
-# Cron container (manual execution)
-```
-docker run bornakarimi/banky-cron:latest
-```
-Access the local URLs:
-
-Streamlit: http://localhost:8501
-
-FastAPI: http://localhost:8000/docs
-
-#### 6.4 Push Images to Docker Hub
-
-Once verified, push each image to your Docker Hub repository:
-```
-docker push username/banky-cron:latest
-
-docker push username/banky-streamlit:latest
-
-docker push username/banky-fastapi:latest
-```
-After pushing, all three containers will appear on your Docker Hub account under the corresponding tags.
-
-#### 6.5 Notes on Reproducibility
-
-Every image build includes the --platform linux/amd64 flag to ensure compatibility with Google Cloud Run.
-
-Dependencies for each image are defined by their respective Dockerfile and environment.yml (if applicable).
-
-Rebuilding and pushing these images from any system reproduces identical containers.
-
-To update a container, rebuild it with a new tag (e.g., :v2) and push again.
-
-#### 6.6 Next Steps: Deploy to Google Cloud Run
-
-Instructions for guiding reproducibility of this were not expected in the deliverables of this project, but this was part of our project.
 
 ## Deliverables
 
