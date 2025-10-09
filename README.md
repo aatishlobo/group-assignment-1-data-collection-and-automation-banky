@@ -6,7 +6,7 @@ This project explores the state of the AI/ML industry by collecting, analyzing, 
 
 By leveraging sources like arXiv (academic research papers) and web/Reddit articles, we aim to capture both the research trends (cutting-edge ML categories, volume of publications, author activity) and community discussions (relative popularity of topics over time). Together, these data streams provide a more complete view of the current AI/ML landscape.
 
-This project is a work in progress, developed by team members A, B, C, D, and E.
+This project is a work in progress, developed by team members Aatish Lobo, Borna Karimi, Jade Tseng, Kayvan Zahiri, and Niki Naderzad.
 
 ## Goals
 
