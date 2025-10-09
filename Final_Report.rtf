@@ -1,0 +1,84 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Bold;\f1\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid2}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Introduction\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 When we started this project, we wanted to get a better feel for how the AI and machine learning world is moving day to day. Everyone talks about \'93state of AI,\'94 but that usually means reading random articles and tweets. We figured, why not actually pull the data ourselves? The main goal was to build something that grabs AI content from different corners of the internet automatically, keeps it updated, and lets us see trends in one place.\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Data Sources and Acquisition\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 We picked a few main sources that hit both research and general conversation.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls1\ilvl0
+\f0\b \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 arXiv
+\f1\b0  for academic papers: real machine learning research, the newest stuff coming out every day. \
+\ls1\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Medium
+\f1\b0  for web discussions and blog posts \'97 where regular folks, startups, and random AI nerds talk about what\'92s happening. All the data gets scraped using a FastAPI backend that runs on a schedule. Each source has its own little scraper script that saves results into Google Cloud Storage as JSON files.\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls1\ilvl0
+\f0\b \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}Anthropic 
+\f1\b0 because they posted their own cluster reports which we could do simple keyword matching on.\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 \
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 System Architecture\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 Our setup has three main parts:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\sa240\partightenfactor0
+\ls2\ilvl0
+\f0\b \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	1	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 FastAPI
+\f1\b0  backend for collecting and saving data.\
+\ls2\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	2	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Cron container
+\f1\b0  that wakes up on a schedule and triggers the scrapers.\
+\ls2\ilvl0
+\f0\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	3	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Streamlit frontend
+\f1\b0  that reads everything from the GCS bucket and turns it into a dashboard.\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 Everything lives in its own Docker container, so it\'92s all portable and deployable to Google Cloud Run.\
+If you drew it out, it\'92s basically:\uc0\u8232 cron \u8594  FastAPI \u8594  GCS \u8594  Streamlit \u8594  user.\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Data Flow Walkthrough\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 It starts with the cron container hitting the FastAPI endpoint every few hours. FastAPI calls the scrapers, which pull new articles and papers, clean them, and upload them into GCS buckets. The Streamlit app then reads the bucket data, combines it, filters out junk, and shows it in a clean table and a few charts. The frontend lets you pick which sources to show and plots how many articles or papers were posted over time.\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Technical Details\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 Everything runs in Docker, using a shared environment file keep dependencies in sync. We use the google cloud storage move data, pandas for handling tables, and matplotlib for charts. The containers are all built for linux/amd64 so they work with Cloud Run. We keep things simple\'97just condo some Python scripts, and the web interface.\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Results and Findings\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 The system actually works to an extent. The dashboard shows live data, and we can see how AI topics rise and fall across different platforms. arXiv posts spike on weekdays, Medium posts come in slower but are more story-driven. Having everything automated and stored in the cloud means we can leave it running without babysitting it.\
+\pard\pardeftab720\sa280\partightenfactor0
+
+\f0\b\fs28 \cf0 Challenges, Lessons, and Next Steps\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f1\b0\fs24 \cf0 We definitely fought with Google Cloud permissions and Docker builds more than expected. Port numbers, environment names, service accounts\'97all tiny things that can break everything. But once it all clicked, it was super satisfying to see the whole pipeline work end to end. \
+Alongside that, we found that attempting to summarize entire datasets of articles with gemini is a very, very slow and tedious process which is not a good experience when trying to deliver a product for a user. Therefore, we decided to cut that from our end goal.\uc0\u8232 If we had more time/spending expenditures, we\'92d like to add a better gemini model to summarize and categorize articles by theme (like \'93LLMs,\'94 \'93robotics,\'94 \'93ethics\'94) hopefully faster, and maybe send alerts/emails when new stuff appears. Currently though, we are happy to have a working product!\
+}

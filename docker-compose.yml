@@ -1,12 +1,13 @@
 services:
   webapp:
     build: app # build from Dockerfile in app
+    platform: linux/amd64
     ports:
       - "80:8501"
     env_file:
-      - ./.env
+      - ./app/.env
     volumes:
-      - /Users/kayvan/.ssh/banky-aiml-data-36ef9bbcdb6d.json:/tmp/gcp-key.json
+      - ${GCP_SERVICE_ACCOUNT_KEY}:/tmp/gcp-key.json
     networks:
       - app-network
     depends_on:
@@ -14,14 +15,15 @@ services:
   
   api-server:
     build: datasources # build from a Dockerfile in datasources
+    platform: linux/amd64
     ports:
       - "8000:8000"
     networks:
       - app-network
     env_file:
-      - ./.env
+      - ./app/.env
     volumes:
-      - /Users/kayvan/.ssh/banky-aiml-data-36ef9bbcdb6d.json:/tmp/gcp-key.json
+      - ${GCP_SERVICE_ACCOUNT_KEY}:/tmp/gcp-key.json
   
   cron:
     build: crontab

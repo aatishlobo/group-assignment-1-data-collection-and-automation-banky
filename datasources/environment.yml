@@ -1,18 +1,32 @@
-name: banky-data-collection
+name: banky-app
 channels:
   - conda-forge
   - defaults
 dependencies:
   - python=3.9
   - pip
+  - pandas
+  - numpy
+  - matplotlib
+  - google-cloud-storage
+  - google-auth
+  - google-api-python-client
+  - google-cloud-bigquery
+  - streamlit
+  - fastapi
+  - uvicorn
+  - beautifulsoup4
+  - requests
+  - pyyaml
+  - python-dotenv
   - pip:
-    - fastapi[standard]
-    - pydantic>=1.8.0
-    - requests>=2.25.0
-    - python-dotenv>=0.19.0
-    - google-cloud-storage>=2.0.0
-    - google-auth>=2.0.0
-    - arxiv>=1.4.0
-    - beautifulsoup4>=4.9.0
-    - streamlit>=1.0.0
-    - uvicorn>=0.15.0  # ASGI server for FastAPI
+      - pydantic>=1.8.0
+      - arxiv>=1.4.0
+      - google-generativeai>=0.5.2
+      - google-cloud-aiplatform>=1.45.0
+      - grpcio>=1.60.0
+      - protobuf>=4.25.0
+      - plotly>=5.18.0
+      - altair>=5.0.0
+      - tqdm>=4.65.0
+      - tenacity>=8.2.0

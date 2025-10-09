@@ -155,7 +155,6 @@ if __name__ == '__main__':
             combined_df,
             hide_index=True,
             column_config={"Link": st.column_config.LinkColumn()},
-            width='stretch'
         )
 
         combined_df["Published"] = pd.to_datetime(combined_df["Published"], errors="coerce")
