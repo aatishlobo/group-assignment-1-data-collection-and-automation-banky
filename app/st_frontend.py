@@ -16,12 +16,9 @@ from gemini_summary import *
 def retrieve_data_from_gcs(folder_prefix):
     credentials = service_account.Credentials.from_service_account_file(service_account_file_path)
     client = storage.Client(project=project_id, credentials=credentials)
-    print("client built")
     bucket = client.bucket(bucket_name)
-    print("bucket found")
 
     blobs = bucket.list_blobs(prefix=folder_prefix)
-    print("buckets listed")
 
     if folder_prefix == "arxiv_papers":
         section_output = {}
@@ -29,7 +26,6 @@ def retrieve_data_from_gcs(folder_prefix):
         section_output = []
 
     for blob in blobs:
-        print(blob.name)
         if blob.name.endswith('/'):
             continue
 
@@ -62,16 +58,11 @@ def retrieve_data_from_gcs(folder_prefix):
             else:
                 print(f"Skipping blob {blob.name}: unrecognized data type {type(data)}")
         elif folder_prefix == "anthropic-ei":
-            print(blob.name)
             file_name = "/aei_raw_claude_ai_2025-08-04_to_2025-08-11.csv"
 
-            # /aei_raw_claude_ai_2025-08-04_to_2025-08-11.csv
             if blob.name == folder_prefix + file_name:
                 csv_data = blob.download_as_text()
                 df = pd.read_csv(StringIO(csv_data))
-
-                # raw = blob.download_as_bytes()
-                # df = pd.read_csv(io.BytesIO(raw))
 
                 values_to_drop = ['none', 'not_classified']
                 df = df.dropna(subset=['cluster_name'])
@@ -176,7 +167,6 @@ if show_ant:
     cluster_counts = df_anthropic['cluster_name'].value_counts()
     cluster_counts = cluster_counts[cluster_counts.index.str.len() < 30]
     top_clusters = cluster_counts.head(20)
-    # wrap labels to 15 characters per line
     wrapped_labels = [textwrap.fill(label, 15) for label in top_clusters.index]
 
     fig1, ax1 = plt.subplots(figsize=(8,8))
@@ -186,8 +176,4 @@ if show_ant:
     ax1.set_ylabel("Topic")
     ax1.set_xlabel("Number of Articles")
     
-    
-    # fig1, ax1 = plt.subplots()
-    
-
     st.pyplot(fig1)
