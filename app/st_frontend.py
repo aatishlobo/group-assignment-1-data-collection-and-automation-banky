@@ -1,5 +1,7 @@
 # streamlit frontend
 import re
+from io import StringIO
+import textwrap
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -31,15 +33,16 @@ def retrieve_data_from_gcs(folder_prefix):
         if blob.name.endswith('/'):
             continue
 
-        try:
-            file_contents = blob.download_as_text()
-            if not file_contents.strip():
-                print(f"Skipping empty file: {blob.name}")
+        if folder_prefix != "anthropic-ei":
+            try:
+                file_contents = blob.download_as_text()
+                if not file_contents.strip():
+                    print(f"Skipping empty file: {blob.name}")
+                    continue
+                data = json.loads(file_contents)
+            except Exception as e:
+                print(f"Skipping invalid or unreadable file {blob.name}: {e}")
                 continue
-            data = json.loads(file_contents)
-        except Exception as e:
-            print(f"Skipping invalid or unreadable file {blob.name}: {e}")
-            continue
 
         if folder_prefix == "arxiv_papers":
             if isinstance(data, dict):
@@ -58,6 +61,23 @@ def retrieve_data_from_gcs(folder_prefix):
                 section_output.append({"bucket_file": filename, "articles": data})
             else:
                 print(f"Skipping blob {blob.name}: unrecognized data type {type(data)}")
+        elif folder_prefix == "anthropic-ei":
+            print(blob.name)
+            file_name = "/aei_raw_claude_ai_2025-08-04_to_2025-08-11.csv"
+
+            # /aei_raw_claude_ai_2025-08-04_to_2025-08-11.csv
+            if blob.name == folder_prefix + file_name:
+                csv_data = blob.download_as_text()
+                df = pd.read_csv(StringIO(csv_data))
+
+                # raw = blob.download_as_bytes()
+                # df = pd.read_csv(io.BytesIO(raw))
+
+                values_to_drop = ['none', 'not_classified']
+                df = df.dropna(subset=['cluster_name'])
+                df = df[~df['cluster_name'].isin(values_to_drop)]
+                
+                return df
 
     return section_output
 
@@ -114,9 +134,13 @@ if __name__ == '__main__':
     df_medium = flatten_medium_articles(filtered)
     df_medium["Source"] = "Medium"
 
+    df_anthropic = retrieve_data_from_gcs("anthropic-ei")
+    df_anthropic = pd.DataFrame(df_anthropic)
+
     st.sidebar.header("Select Data Sources")
     show_arxiv = st.sidebar.checkbox("Arxiv Papers", value=True)
     show_medium = st.sidebar.checkbox("Medium Articles", value=True)
+    show_ant = st.sidebar.checkbox("Anthropic Articles", value=True)
 
     combined_df = pd.DataFrame(columns=["Title", "Published", "Summary", "Link", "Source"])
     if show_arxiv:
@@ -147,3 +171,23 @@ if __name__ == '__main__':
         ax.grid(True, linestyle="--", alpha=0.6)
         plt.xticks(rotation=45)
         st.pyplot(fig)
+
+if show_ant:
+    cluster_counts = df_anthropic['cluster_name'].value_counts()
+    cluster_counts = cluster_counts[cluster_counts.index.str.len() < 30]
+    top_clusters = cluster_counts.head(20)
+    # wrap labels to 15 characters per line
+    wrapped_labels = [textwrap.fill(label, 15) for label in top_clusters.index]
+
+    fig1, ax1 = plt.subplots(figsize=(8,8))
+    top_clusters.plot(kind='barh', ax=ax1)
+    ax1.set_yticklabels(wrapped_labels, fontsize=8)
+    ax1.set_title("Anthropic Articles Topic Frequency")
+    ax1.set_ylabel("Topic")
+    ax1.set_xlabel("Number of Articles")
+    
+    
+    # fig1, ax1 = plt.subplots()
+    
+
+    st.pyplot(fig1)
