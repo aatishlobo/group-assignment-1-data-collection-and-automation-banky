@@ -111,7 +111,7 @@ def flatten_medium_articles(data):
 
 
 if __name__ == '__main__':
-    st.title("Scraped Data")
+    st.title("State of AI/ML Industry - Data Dashboard")
 
     arxiv_dict = retrieve_data_from_gcs("arxiv_papers")
     arxiv_titles = arxiv_dict.keys()
@@ -131,7 +131,6 @@ if __name__ == '__main__':
     st.sidebar.header("Select Data Sources")
     show_arxiv = st.sidebar.checkbox("Arxiv Papers", value=True)
     show_medium = st.sidebar.checkbox("Medium Articles", value=True)
-    show_ant = st.sidebar.checkbox("Anthropic Articles", value=True)
 
     combined_df = pd.DataFrame(columns=["Title", "Published", "Summary", "Link", "Source"])
     if show_arxiv:
@@ -139,6 +138,15 @@ if __name__ == '__main__':
     if show_medium:
         combined_df = pd.concat([combined_df, df_medium], ignore_index=True)
     combined_df = combined_df.drop_duplicates(subset="Title", keep="first").reset_index(drop=True)
+
+    st.markdown("### Research & Article Streams")
+    st.markdown("""
+    The following section aggregates content from **arXiv** (academic AI/ML papers) and **Medium** (community and industry perspectives).  
+    Together, they illustrate the dual view of AI: cutting-edge research progress and public discourse.
+
+    - **Arxiv** → data from the latest AI/ML papers (title, summary, date, link).  
+    - **Medium** → scraped AI-related articles captured via automated cron jobs stored on GCS.  
+    """)
 
     if combined_df.empty:
         st.warning("No data selected.")
@@ -163,17 +171,22 @@ if __name__ == '__main__':
         plt.xticks(rotation=45)
         st.pyplot(fig)
 
-if show_ant:
+    st.markdown("---")
+    st.markdown("### Anthropic Topic Clustering Analysis")
+    st.markdown("""
+    This section visualizes **Anthropic** article clusters, which categorize AI/ML-related content by recurring topic themes.  
+    Each bar below represents a cluster identified in the collected Anthropic dataset — shorter bars indicate niche themes, while longer ones reveal recurring focus areas.
+    """)
+
     cluster_counts = df_anthropic['cluster_name'].value_counts()
     cluster_counts = cluster_counts[cluster_counts.index.str.len() < 30]
     top_clusters = cluster_counts.head(20)
     wrapped_labels = [textwrap.fill(label, 15) for label in top_clusters.index]
 
-    fig1, ax1 = plt.subplots(figsize=(8,8))
+    fig1, ax1 = plt.subplots(figsize=(8, 8))
     top_clusters.plot(kind='barh', ax=ax1)
     ax1.set_yticklabels(wrapped_labels, fontsize=8)
     ax1.set_title("Anthropic Articles Topic Frequency")
     ax1.set_ylabel("Topic")
     ax1.set_xlabel("Number of Articles")
-    
     st.pyplot(fig1)
