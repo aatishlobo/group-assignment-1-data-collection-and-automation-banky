@@ -209,9 +209,9 @@ Instructions for guiding reproducibility of this were not expected in the delive
 
 * Article scraping pipeline (Google Custom Search + Medium)
 * arXiv data collection
-* Reddit integration (work in progress)
-* Unified ETL pipeline (work in progress)
-* Dockerization and automation (work in progress)
+* Unified ETL pipeline
+* Dockerization and automation
+* Google Cloud Run Publish
 
 ## Team
 
