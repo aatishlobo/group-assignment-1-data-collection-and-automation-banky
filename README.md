@@ -96,7 +96,12 @@ python call_fast_apiproject.py
 Run arXiv scraper:
 
 ```bash
-python arxiv_scraper.py
+python get_arxiv.py
+```
+
+Run medium scraper:
+```bash
+python get_medium.py
 ```
 
 ### 5. Automate with Cron
