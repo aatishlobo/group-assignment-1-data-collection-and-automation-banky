@@ -84,7 +84,7 @@ pip install -r requirements.txt
 Start the FastAPI server:
 
 ```bash
-uvicorn extract_save_data_project:app --reload
+fastapi dev extract_save_data_project:app --reload
 ```
 
 Trigger scraping:
@@ -107,14 +107,79 @@ Example cron job to run every day at midnight:
 0 0 * * * /usr/bin/python3 /path/to/call_fast_apiproject.py >> /var/log/cron_ai_pipeline.log 2>&1
 ```
 
-### 6. Containerization with Docker
+### 6. Containerization and Deployment
 
-Build and run container:
+This project includes three containerized components:
+
+1. **Cron container** – runs automated scraping tasks (located in `crontab/`)
+2. **Streamlit frontend** – dashboard visualization interface (located in `app/`)
+3. **FastAPI backend** – handles data extraction and upload to GCS (located in `datasources/`)
+
+Each container can be built, tested locally, and pushed to Docker Hub for deployment.
+
+---
+
+#### 6.1 Authenticate with Docker Hub
+
+Before building images, log in to Docker Hub:
 
 ```bash
-docker build -t ai-ml-pipeline .
-docker run -p 8000:8000 ai-ml-pipeline
+docker login
+
 ```
+Enter your Docker Hub username and personal access token (or password).
+
+#### 6.2 Build Images Locally
+
+From the project root directory, run the following commands to build all three images.
+Each is explicitly set to build for the linux/amd64 platform (required for Google Cloud Run
+
+# Cron container (located in crontab/)
+docker build --platform linux/amd64 -t username/banky-cron:latest -f crontab/Dockerfile .
+
+# Streamlit frontend (located in app/)
+docker build --no-cache --platform linux/amd64 -t username/banky-streamlit:latest -f app/Dockerfile .
+
+# FastAPI backend (located in datasources/)
+docker build --platform linux/amd64 -t username/banky-fastapi:latest -f datasources/Dockerfile .
+
+These commands create three reproducible Docker images on your local system.
+
+#### 6.3 Test Containers Locally (Optional)
+
+You can test each container before pushing:
+
+Access the local URLs:
+
+Streamlit: http://localhost:8501
+
+FastAPI: http://localhost:8000/docs
+
+#### 6.4 Push Images to Docker Hub
+
+Once verified, push each image to your Docker Hub repository:
+
+docker push username/banky-cron:latest
+
+docker push username/banky-streamlit:latest
+
+docker push username/banky-fastapi:latest
+
+After pushing, all three containers will appear on your Docker Hub account under the corresponding tags.
+
+#### 6.5 Notes on Reproducibility
+
+Every image build includes the --platform linux/amd64 flag to ensure compatibility with Google Cloud Run.
+
+Dependencies for each image are defined by their respective Dockerfile and environment.yml (if applicable).
+
+Rebuilding and pushing these images from any system reproduces identical containers.
+
+To update a container, rebuild it with a new tag (e.g., :v2) and push again.
+
+#### 6.6 Next Steps: Deploy to Google Cloud Run
+
+Instructions for guiding reproducibility of this were not expected in the deliverables of this project, but this was part of our project.
 
 ## Deliverables
 
