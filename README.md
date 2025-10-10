@@ -2,6 +2,8 @@
 
 ## Project Overview
 
+link to deployed website: https://streamlit-image-885485481306.europe-west1.run.app/
+
 This project explores the state of the AI/ML industry by collecting, analyzing, and integrating data from multiple sources. The goal is to build a fully automated, containerized pipeline that continuously scrapes and processes data, stores it in Google Cloud Platform (GCP), and makes it available for downstream analysis.
 
 By leveraging sources like arXiv (academic research papers) and web/Reddit articles, we aim to capture both the research trends (cutting-edge ML categories, volume of publications, author activity) and community discussions (relative popularity of topics over time). Together, these data streams provide a more complete view of the current AI/ML landscape.
